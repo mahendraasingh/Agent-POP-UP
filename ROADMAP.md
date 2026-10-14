@@ -16,23 +16,23 @@ This document outlines the phased development plan for **Agent Pop-Up**. Every l
 ---
 
 ## Phase 2: Desktop Foundation & Project Scaffolding
-- [ ] Scaffold Electron + Vite + React + TypeScript desktop application structure.
-- [ ] Implement secure Electron main process with proper window lifecycle (frameless, floating top-left, draggable, always-on-top, multi-monitor clamping).
-- [ ] Implement strict preload bridge (`contextBridge`) with typed IPC contracts.
-- [ ] Configure Tailwind CSS styling system and dark-theme foundation.
-- [ ] Set up build & dev scripts (`npm run dev`, `npm run build`, `npm test`).
-- [ ] Verify local compilation and window rendering.
-- [ ] Push Phase 2 checkpoint to GitHub and verify.
+- [x] Scaffold Electron + Vite + React + TypeScript desktop application structure.
+- [x] Implement secure Electron main process with proper window lifecycle (frameless, floating top-left, draggable, always-on-top, multi-monitor clamping).
+- [x] Implement strict preload bridge (`contextBridge`) with typed IPC contracts.
+- [x] Configure Tailwind CSS / modern CSS styling system and dark-theme foundation.
+- [x] Set up build & dev scripts (`npm run dev`, `npm run build`, `npm test`).
+- [x] Verify local compilation and window rendering.
+- [x] Push Phase 2 checkpoint to GitHub and verify.
 
 ---
 
 ## Phase 3: Floating Popup UI & Unified Agent Inbox
-- [ ] Build floating compact notification card with agent badge, project context, command/question display, and action buttons (Allow, Deny, Submit, Dismiss).
-- [ ] Implement expand/collapse modes (Floating Quick Action <-> Unified Inbox).
-- [ ] Build Unified Inbox with tabbed/filtered views (Pending, Waiting, Resolved, Dismissed).
-- [ ] Build Request Detail Modal for large commands, diffs, and risk analysis.
-- [ ] Add smooth micro-animations and keyboard navigation (`Esc` dismiss, `Enter` allow).
-- [ ] Push Phase 3 checkpoint to GitHub and verify.
+- [x] Build floating compact notification card with agent badge, project context, command/question display, and action buttons (Allow, Deny, Submit, Dismiss).
+- [x] Implement expand/collapse modes (Floating Quick Action <-> Unified Inbox).
+- [x] Build Unified Inbox with tabbed/filtered views (Pending, Waiting, Resolved, Dismissed).
+- [x] Build Request Detail Modal for large commands, diffs, and risk analysis.
+- [x] Add smooth micro-animations and keyboard navigation (`Esc` dismiss, `Enter` allow).
+- [x] Push Phase 3 checkpoint to GitHub and verify.
 
 ---
 

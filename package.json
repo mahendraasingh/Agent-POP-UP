@@ -1,0 +1,38 @@
+{
+  "name": "agent-popup",
+  "version": "0.1.0",
+  "description": "Desktop AI Agent Control Center - Floating popup & unified inbox for autonomous coding agents",
+  "main": "dist/main/index.js",
+  "author": "Mahendra Singh",
+  "license": "MIT",
+  "scripts": {
+    "dev": "concurrently -k -n \"VITE,ELECTRON\" -c \"cyan,magenta\" \"vite --config vite.config.ts\" \"wait-on tcp:5173 && cross-env NODE_ENV=development electron .\"",
+    "build:vite": "vite build --config vite.config.ts",
+    "build:main": "tsc -p tsconfig.node.json",
+    "build": "npm run build:vite && npm run build:main",
+    "start": "electron .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder"
+  },
+  "dependencies": {
+    "lucide-react": "^1.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "cross-env": "^7.0.3",
+    "electron": "^34.2.0",
+    "electron-builder": "^25.1.8",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^5.7.3",
+    "vite": "^6.2.0",
+    "vitest": "^3.0.7",
+    "wait-on": "^8.0.2"
+  }
+}
