@@ -97,3 +97,13 @@ This document outlines the phased development plan for **Agent Pop-Up**. Every l
 - [x] Adjust compact window dimensions (`440x280`) in `WindowManager` for optimal vertical breathing room.
 - [x] Refine `UnifiedInbox.tsx` with glassmorphic cards, search filtering, and clear state transitions.
 - [x] Verify compilation (`npm run build`), test suite (28 passing tests), and localhost HMR.
+
+---
+
+## Phase 11: Floating Desktop Icon & Dynamic Multi-Tier Overlay Architecture
+- [x] Re-architect desktop overlay into a 3-tier geometry system (`icon`: 72×72px, `panel`: 420×290px, `inbox`: 740×560px).
+- [x] Implement AI Companion Orb (`FloatingOrb.tsx`) with glassmorphic sphere, reactive orbital rings, and dynamic status halox.
+- [x] Implement live attention badge counters for pending requests (`1`, `2`, `3+`) on the floating orb.
+- [x] Wire click-to-expand and collapse without dismissing or resolving background requests.
+- [x] Add IPC handlers (`WINDOW_SET_MODE`, `WINDOW_GET_MODE`) and smooth position-clamped window resizing.
+- [x] Verify browser subagent testing, Vitest test suite (28 passed), and production build.

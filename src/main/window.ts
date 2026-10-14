@@ -1,14 +1,16 @@
 import { BrowserWindow, screen, app } from 'electron';
 import path from 'path';
-import { AgentDockSettings } from '../shared/types';
+import { AgentDockSettings, WindowViewMode } from '../shared/types';
 
-export const COMPACT_SIZE = { width: 440, height: 280 };
-export const EXPANDED_SIZE = { width: 740, height: 560 };
+export const ICON_SIZE = { width: 72, height: 72 };
+export const PANEL_SIZE = { width: 420, height: 290 };
+export const INBOX_SIZE = { width: 740, height: 560 };
 
 export class WindowManager {
   private window: BrowserWindow | null = null;
-  private isExpanded: boolean = false;
+  private currentMode: WindowViewMode = 'icon';
   private settings: AgentDockSettings;
+  private iconAnchorPosition: { x: number; y: number } | null = null;
 
   constructor(settings: AgentDockSettings) {
     this.settings = settings;
@@ -16,8 +18,8 @@ export class WindowManager {
 
   public createWindow(): BrowserWindow {
     const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
-    const initialSize = this.settings.compactMode ? COMPACT_SIZE : EXPANDED_SIZE;
-    this.isExpanded = !this.settings.compactMode;
+    this.currentMode = 'icon';
+    const initialSize = ICON_SIZE;
 
     // Clamp coordinates to primary display to prevent off-screen windows
     const primaryDisplay = screen.getPrimaryDisplay();
@@ -35,6 +37,8 @@ export class WindowManager {
     posX = Math.max(workArea.x + 12, posX);
     posY = Math.max(workArea.y + 12, posY);
 
+    this.iconAnchorPosition = { x: posX, y: posY };
+
     this.window = new BrowserWindow({
       width: initialSize.width,
       height: initialSize.height,
@@ -45,11 +49,11 @@ export class WindowManager {
       backgroundColor: '#00000000',
       alwaysOnTop: this.settings.alwaysOnTop,
       resizable: true,
-      minWidth: 380,
-      minHeight: 200,
+      minWidth: 64,
+      minHeight: 64,
       skipTaskbar: false,
       show: false,
-      hasShadow: true,
+      hasShadow: false, // We render our own smooth glassmorphic shadow in CSS
       webPreferences: {
         preload: path.join(__dirname, '../preload/index.js'),
         contextIsolation: true,
@@ -71,7 +75,10 @@ export class WindowManager {
     this.window.on('moved', () => {
       if (!this.window) return;
       const [x, y] = this.window.getPosition();
-      this.settings.windowPosition = { x, y };
+      if (this.currentMode === 'icon') {
+        this.iconAnchorPosition = { x, y };
+        this.settings.windowPosition = { x, y };
+      }
     });
 
     return this.window;
@@ -81,23 +88,30 @@ export class WindowManager {
     return this.window;
   }
 
-  public toggleExpand(forceExpand?: boolean): boolean {
-    if (!this.window) return false;
-    const targetState = forceExpand !== undefined ? forceExpand : !this.isExpanded;
-    this.isExpanded = targetState;
+  public getMode(): WindowViewMode {
+    return this.currentMode;
+  }
+
+  public setMode(targetMode: WindowViewMode): WindowViewMode {
+    if (!this.window) return this.currentMode;
+    this.currentMode = targetMode;
+
+    let targetSize = ICON_SIZE;
+    if (targetMode === 'panel') targetSize = PANEL_SIZE;
+    if (targetMode === 'inbox') targetSize = INBOX_SIZE;
 
     const [currentX, currentY] = this.window.getPosition();
-    const targetSize = targetState ? EXPANDED_SIZE : COMPACT_SIZE;
+    const anchorX = this.iconAnchorPosition?.x ?? currentX;
+    const anchorY = this.iconAnchorPosition?.y ?? currentY;
 
-    // Smoothly animate/resize
+    // Smoothly animate resize
     this.window.setSize(targetSize.width, targetSize.height, true);
-    
-    // Ensure window stays within screen bounds when expanding
-    const display = screen.getDisplayNearestPoint({ x: currentX, y: currentY });
+
+    const display = screen.getDisplayNearestPoint({ x: anchorX, y: anchorY });
     const { workArea } = display;
 
-    let newX = currentX;
-    let newY = currentY;
+    let newX = anchorX;
+    let newY = anchorY;
 
     if (newX + targetSize.width > workArea.x + workArea.width) {
       newX = workArea.x + workArea.width - targetSize.width - 16;
@@ -106,11 +120,33 @@ export class WindowManager {
       newY = workArea.y + workArea.height - targetSize.height - 16;
     }
 
-    if (newX !== currentX || newY !== currentY) {
-      this.window.setPosition(Math.max(workArea.x, newX), Math.max(workArea.y, newY), true);
+    newX = Math.max(workArea.x + 8, newX);
+    newY = Math.max(workArea.y + 8, newY);
+
+    this.window.setPosition(newX, newY, true);
+
+    return this.currentMode;
+  }
+
+  public toggleExpand(forceExpand?: boolean): boolean {
+    if (forceExpand === true) {
+      this.setMode('panel');
+      return true;
+    } else if (forceExpand === false) {
+      this.setMode('icon');
+      return false;
     }
 
-    return this.isExpanded;
+    if (this.currentMode === 'icon') {
+      this.setMode('panel');
+      return true;
+    } else if (this.currentMode === 'panel') {
+      this.setMode('inbox');
+      return true;
+    } else {
+      this.setMode('icon');
+      return false;
+    }
   }
 
   public setAlwaysOnTop(alwaysOnTop: boolean): void {
@@ -120,7 +156,12 @@ export class WindowManager {
   }
 
   public minimize(): void {
-    this.window?.minimize();
+    // For floating icon, minimizing collapses to icon mode first
+    if (this.currentMode !== 'icon') {
+      this.setMode('icon');
+    } else {
+      this.window?.minimize();
+    }
   }
 
   public hide(): void {

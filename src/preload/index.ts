@@ -13,6 +13,8 @@ export interface AgentDockAPI {
   hide: () => Promise<void>;
   show: () => Promise<void>;
   toggleExpand: (expand?: boolean) => Promise<boolean>;
+  setMode: (mode: import('../shared/types').WindowViewMode) => Promise<import('../shared/types').WindowViewMode>;
+  getMode: () => Promise<import('../shared/types').WindowViewMode>;
   setAlwaysOnTop: (alwaysOnTop: boolean) => Promise<void>;
   getBounds: () => Promise<{ x: number; y: number; width: number; height: number }>;
 
@@ -41,6 +43,8 @@ const api: AgentDockAPI = {
   hide: () => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_HIDE),
   show: () => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_SHOW),
   toggleExpand: (expand) => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_TOGGLE_EXPAND, expand),
+  setMode: (mode) => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_SET_MODE, mode),
+  getMode: () => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_GET_MODE),
   setAlwaysOnTop: (alwaysOnTop) => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_SET_ALWAYS_ON_TOP, alwaysOnTop),
   getBounds: () => ipcRenderer.invoke(IPC_CHANNELS.WINDOW_GET_BOUNDS),
 

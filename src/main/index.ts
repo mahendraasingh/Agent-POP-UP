@@ -72,6 +72,14 @@ function setupIpcHandlers() {
     return windowManager?.toggleExpand(expand);
   });
 
+  ipcMain.handle(IPC_CHANNELS.WINDOW_SET_MODE, (_e, mode: import('../shared/types').WindowViewMode) => {
+    return windowManager?.setMode(mode);
+  });
+
+  ipcMain.handle(IPC_CHANNELS.WINDOW_GET_MODE, () => {
+    return windowManager?.getMode() ?? 'icon';
+  });
+
   ipcMain.handle(IPC_CHANNELS.WINDOW_SET_ALWAYS_ON_TOP, (_e, alwaysOnTop: boolean) => {
     windowManager?.setAlwaysOnTop(alwaysOnTop);
     settingsStore?.update({ alwaysOnTop });

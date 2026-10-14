@@ -88,12 +88,16 @@ export const DEFAULT_SETTINGS: AgentDockSettings = {
   compactMode: true,
 };
 
+export type WindowViewMode = 'icon' | 'panel' | 'inbox';
+
 export const IPC_CHANNELS = {
   // Window controls
   WINDOW_MINIMIZE: 'agentdock:window:minimize',
   WINDOW_HIDE: 'agentdock:window:hide',
   WINDOW_SHOW: 'agentdock:window:show',
   WINDOW_TOGGLE_EXPAND: 'agentdock:window:toggle-expand',
+  WINDOW_SET_MODE: 'agentdock:window:set-mode',
+  WINDOW_GET_MODE: 'agentdock:window:get-mode',
   WINDOW_SET_ALWAYS_ON_TOP: 'agentdock:window:set-always-on-top',
   WINDOW_GET_BOUNDS: 'agentdock:window:get-bounds',
 

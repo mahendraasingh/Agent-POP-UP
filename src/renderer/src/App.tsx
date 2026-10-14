@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   AgentRequest, 
   AgentInfo, 
   AgentDockSettings, 
   DEFAULT_SETTINGS, 
-  ActionType 
+  ActionType,
+  WindowViewMode 
 } from '../../shared/types';
+import { FloatingOrb } from './components/FloatingOrb';
 import { FloatingCard } from './components/FloatingCard';
 import { UnifiedInbox } from './components/UnifiedInbox';
 import { AgentOverview } from './components/AgentOverview';
@@ -19,14 +21,14 @@ import {
   ChevronDown, 
   ChevronUp, 
   Sparkles,
-  Shield,
-  Monitor,
-  Play,
   RotateCcw,
-  CheckCircle2,
   Terminal,
   HelpCircle,
-  AlertTriangle
+  AlertTriangle,
+  CheckCircle2,
+  Minimize2,
+  X,
+  Monitor
 } from 'lucide-react';
 
 declare global {
@@ -39,16 +41,16 @@ export const App: React.FC = () => {
   const [requests, setRequests] = useState<AgentRequest[]>([]);
   const [agents, setAgents] = useState<AgentInfo[]>([]);
   const [settings, setSettings] = useState<AgentDockSettings>(DEFAULT_SETTINGS);
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  
+  // 3-Tier View Mode: 'icon' (72x72) | 'panel' (420x290) | 'inbox' (740x560)
+  const [viewMode, setViewMode] = useState<WindowViewMode>('icon');
   const [activeTab, setActiveTab] = useState<'inbox' | 'agents'>('inbox');
   const [selectedRequest, setSelectedRequest] = useState<AgentRequest | null>(null);
   const [showSettings, setShowSettings] = useState<boolean>(false);
   const [activeRequestIndex, setActiveRequestIndex] = useState<number>(0);
   const [hiddenRequestIds, setHiddenRequestIds] = useState<Set<string>>(new Set());
 
-  // Browser simulator mode controls
   const isDesktopNative = typeof window !== 'undefined' && !!window.agentDockAPI;
-  const [simulatorSize, setSimulatorSize] = useState<'compact' | 'expanded'>('compact');
 
   useEffect(() => {
     if (isDesktopNative && window.agentDockAPI) {
@@ -56,11 +58,12 @@ export const App: React.FC = () => {
       window.agentDockAPI.getRequests().then(setRequests);
       window.agentDockAPI.getAgents().then(setAgents);
       window.agentDockAPI.getSettings().then(setSettings);
+      window.agentDockAPI.getMode().then(setViewMode);
 
       // Listen for push updates
       const unsubReq = window.agentDockAPI.onRequestUpdate((updatedReqs) => {
         setRequests(updatedReqs);
-        // Clear hidden state for requests that are no longer pending or are newly updated
+        // Clear hidden state for requests that are no longer pending
         setHiddenRequestIds(prev => {
           const next = new Set(prev);
           for (const id of prev) {
@@ -168,31 +171,39 @@ export const App: React.FC = () => {
     ]);
   };
 
-  // Filter requests that are currently pending and NOT temporarily hidden from floating card
   const allPending = requests.filter(r => r.status === 'pending');
   const visiblePending = allPending.filter(r => !hiddenRequestIds.has(r.id));
-  
-  // Ensure active index stays in bounds
   const safeIndex = visiblePending.length > 0 ? Math.min(activeRequestIndex, visiblePending.length - 1) : 0;
   const currentFloatingRequest = visiblePending[safeIndex] || (visiblePending.length > 0 ? visiblePending[0] : undefined);
+
+  // Switch view mode with Electron window resize sync
+  const switchMode = async (targetMode: WindowViewMode) => {
+    setViewMode(targetMode);
+    if (window.agentDockAPI) {
+      await window.agentDockAPI.setMode(targetMode);
+    }
+  };
 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (showSettings || selectedRequest) return;
-      if (e.key === 'Escape' && currentFloatingRequest) {
-        handleDismiss(currentFloatingRequest.id);
+      if (e.key === 'Escape') {
+        if (viewMode === 'inbox') {
+          switchMode('panel');
+        } else if (viewMode === 'panel') {
+          switchMode('icon');
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentFloatingRequest, showSettings, selectedRequest]);
+  }, [viewMode, showSettings, selectedRequest]);
 
   const handleRespond = async (id: string, action: ActionType, input?: string) => {
     if (window.agentDockAPI) {
       await window.agentDockAPI.respondToRequest(id, action, input);
     } else {
-      // In-browser simulated response with realistic state feedback
       await new Promise(r => setTimeout(r, 450));
       setRequests(prev => prev.map(r => r.id === id ? {
         ...r, 
@@ -204,15 +215,10 @@ export const App: React.FC = () => {
   };
 
   const handleDismiss = async (id: string) => {
-    // When clicking cross (dismiss):
-    // "Hide the floating popup without approving, rejecting, canceling, or otherwise changing the underlying request. Keep the request in a persistent pending-request inbox."
+    // Hide popup without changing underlying request status:
     setHiddenRequestIds(prev => new Set(prev).add(id));
-    if (window.agentDockAPI) {
-      // In native mode, if no more visible pending requests, we can also minimize or hide the popup
-      if (visiblePending.length <= 1) {
-        window.agentDockAPI.hide();
-      }
-    }
+    // Collapse to floating icon
+    await switchMode('icon');
   };
 
   const handleClearHistory = async () => {
@@ -223,25 +229,7 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleToggleExpand = async () => {
-    if (window.agentDockAPI) {
-      const next = await window.agentDockAPI.toggleExpand();
-      setIsExpanded(next);
-    } else {
-      setIsExpanded(prev => !prev);
-      setSimulatorSize(prev => prev === 'compact' ? 'expanded' : 'compact');
-    }
-  };
-
-  const handleMinimize = () => {
-    if (window.agentDockAPI) {
-      window.agentDockAPI.minimize();
-    } else if (currentFloatingRequest) {
-      handleDismiss(currentFloatingRequest.id);
-    }
-  };
-
-  // Browser simulator helper to inject test requests
+  // Browser test scenario injectors
   const injectSimulatorRequest = (type: 'claude_cmd' | 'anti_question' | 'risk_cmd' | 'completed') => {
     const id = `sim-${Date.now()}`;
     let newReq: AgentRequest;
@@ -310,7 +298,7 @@ export const App: React.FC = () => {
         agentName: 'Antigravity IDE',
         category: 'task_completed',
         title: 'Styling Overhaul Complete',
-        description: 'All 4 components updated with glassmorphism and Tailwind v4 engine',
+        description: 'All components updated with glassmorphism and Tailwind v4 engine',
         workspacePath: 'd:/agent pop up',
         payload: {},
         supportedActions: ['dismiss'],
@@ -321,7 +309,6 @@ export const App: React.FC = () => {
     }
 
     setRequests(prev => [newReq, ...prev]);
-    // Unhide if was hidden
     setHiddenRequestIds(prev => {
       const next = new Set(prev);
       next.delete(id);
@@ -334,10 +321,14 @@ export const App: React.FC = () => {
   const isQuestion = currentFloatingRequest?.category === 'user_question';
   const isCompletion = currentFloatingRequest?.category === 'task_completed';
 
-  // RENDER APP CORE COMPONENT
-  const renderAppContent = () => {
+  // -------------------------------------------------------------
+  // RENDER COMPACT FLOATING PANEL (Tier 2) & INBOX (Tier 3)
+  // -------------------------------------------------------------
+  const renderCardOrInboxContent = () => {
+    const isInbox = viewMode === 'inbox';
+
     return (
-      <div className={`w-full h-full rounded-2xl overflow-hidden flex flex-col transition-all duration-300 glass-panel border ${
+      <div className={`w-full h-full rounded-2xl overflow-hidden flex flex-col transition-all duration-200 glass-panel border ${
         currentFloatingRequest 
           ? isDestructive 
             ? 'glow-destructive' 
@@ -348,7 +339,7 @@ export const App: React.FC = () => {
                 : 'glow-border' 
           : 'border-slate-800/90 shadow-2xl'
       }`}>
-        {/* Top Titlebar / Drag Handle */}
+        {/* Top Header / Titlebar */}
         <div className="titlebar-drag h-8 px-3 flex items-center justify-between border-b border-white/[0.08] bg-slate-950/60 select-none backdrop-blur-md">
           <div className="flex items-center gap-2">
             <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-400 shadow-sm shadow-indigo-500/50" />
@@ -364,7 +355,7 @@ export const App: React.FC = () => {
 
           {/* Window controls */}
           <div className="no-drag flex items-center gap-1">
-            {isExpanded && (
+            {isInbox && (
               <div className="flex items-center mr-2 border-r border-slate-800 pr-2 gap-1">
                 <button
                   onClick={() => setActiveTab('inbox')}
@@ -399,25 +390,25 @@ export const App: React.FC = () => {
               <Sliders size={13} />
             </button>
             <button
-              onClick={handleToggleExpand}
+              onClick={() => switchMode(isInbox ? 'panel' : 'inbox')}
               className="p-1 rounded text-slate-400 hover:text-slate-100 hover:bg-slate-800/70 transition"
-              title={isExpanded ? 'Collapse to Floating Card' : 'Expand Unified Inbox'}
+              title={isInbox ? 'Collapse to Compact Panel' : 'Expand to Full Inbox'}
             >
-              {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              {isInbox ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
             </button>
             <button
-              onClick={handleMinimize}
+              onClick={() => switchMode('icon')}
               className="p-1 rounded text-slate-400 hover:text-slate-100 hover:bg-slate-800/70 transition"
-              title="Minimize"
+              title="Collapse to Floating Icon"
             >
-              <Minus size={14} />
+              <Minimize2 size={13} />
             </button>
           </div>
         </div>
 
-        {/* Main Body */}
+        {/* Content Body */}
         <div className="flex-1 overflow-hidden relative">
-          {!isExpanded ? (
+          {!isInbox ? (
             <FloatingCard
               request={currentFloatingRequest}
               pendingCount={visiblePending.length}
@@ -426,7 +417,7 @@ export const App: React.FC = () => {
               onNavigateRequest={(idx) => setActiveRequestIndex(idx)}
               onRespond={handleRespond}
               onDismiss={handleDismiss}
-              onToggleExpand={handleToggleExpand}
+              onToggleExpand={() => switchMode('inbox')}
               onOpenDetails={setSelectedRequest}
               onOpenSettings={() => setShowSettings(true)}
             />
@@ -467,17 +458,31 @@ export const App: React.FC = () => {
     );
   };
 
-  // IF RUNNING AS PACKAGED / DEV ELECTRON APPLICATION:
+  // -------------------------------------------------------------
+  // NATIVE ELECTRON DESKTOP RUNTIME
+  // -------------------------------------------------------------
   if (isDesktopNative) {
+    if (viewMode === 'icon') {
+      return (
+        <div className="w-screen h-screen flex items-center justify-center p-1 overflow-hidden bg-transparent">
+          <FloatingOrb
+            pendingRequests={allPending}
+            onExpand={() => switchMode('panel')}
+          />
+        </div>
+      );
+    }
+
     return (
-      <div className="w-screen h-screen overflow-hidden p-1.5">
-        {renderAppContent()}
+      <div className="w-screen h-screen p-1.5 overflow-hidden bg-transparent">
+        {renderCardOrInboxContent()}
       </div>
     );
   }
 
-  // IF RUNNING IN LOCALHOST BROWSER PREVIEW:
-  // Render an ultra-polished desktop simulation canvas so localhost looks extraordinary!
+  // -------------------------------------------------------------
+  // LOCALHOST WEB BROWSER DESKTOP SIMULATOR
+  // -------------------------------------------------------------
   return (
     <div className="min-h-screen w-screen bg-[#070b12] text-slate-100 flex flex-col font-sans select-none overflow-hidden relative">
       {/* Background ambient lighting */}
@@ -490,7 +495,7 @@ export const App: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-xs font-bold tracking-tight text-slate-200">
-              Agent POP-UP <span className="text-indigo-400 font-normal">Desktop Live Preview</span>
+              Agent POP-UP <span className="text-indigo-400 font-normal">Desktop Icon Simulator</span>
             </span>
           </div>
           <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800/90 text-slate-400 border border-slate-700 font-mono">
@@ -542,28 +547,32 @@ export const App: React.FC = () => {
           </button>
         </div>
 
-        {/* View Size Switcher */}
+        {/* View Mode Switcher */}
         <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-lg border border-slate-800 text-xs">
           <button
-            onClick={() => {
-              setIsExpanded(false);
-              setSimulatorSize('compact');
-            }}
+            onClick={() => switchMode('icon')}
             className={`px-2.5 py-0.5 rounded text-[11px] transition font-medium ${
-              !isExpanded && simulatorSize === 'compact'
+              viewMode === 'icon'
                 ? 'bg-indigo-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
-            Floating (440×260)
+            Floating Icon (72×72)
           </button>
           <button
-            onClick={() => {
-              setIsExpanded(true);
-              setSimulatorSize('expanded');
-            }}
+            onClick={() => switchMode('panel')}
             className={`px-2.5 py-0.5 rounded text-[11px] transition font-medium ${
-              isExpanded || simulatorSize === 'expanded'
+              viewMode === 'panel'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Panel (420×290)
+          </button>
+          <button
+            onClick={() => switchMode('inbox')}
+            className={`px-2.5 py-0.5 rounded text-[11px] transition font-medium ${
+              viewMode === 'inbox'
                 ? 'bg-indigo-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
@@ -574,8 +583,8 @@ export const App: React.FC = () => {
       </header>
 
       {/* Simulated Desktop Workspace Area */}
-      <main className="flex-1 p-6 flex flex-col items-center justify-center relative overflow-hidden">
-        {/* Desktop grid pattern */}
+      <main className="flex-1 p-8 relative overflow-hidden flex flex-col justify-between">
+        {/* Subtle grid background */}
         <div 
           className="absolute inset-0 opacity-[0.03] pointer-events-none"
           style={{
@@ -584,30 +593,49 @@ export const App: React.FC = () => {
           }}
         />
 
-        {/* Simulated Top-Left Position Callout */}
-        <div className="absolute top-4 left-6 text-[11px] text-slate-500 flex items-center gap-1.5 font-mono">
-          <Monitor size={12} className="text-slate-400" />
-          <span>Simulated Desktop Workspace · Top-Left Floating Overlay</span>
+        {/* Top-Left Callout info */}
+        <div className="text-[11px] text-slate-500 flex items-center gap-2 font-mono z-10">
+          <Monitor size={13} className="text-slate-400" />
+          <span>Desktop Workspace · Always-on-top Floating Overlay</span>
+          {viewMode === 'icon' && (
+            <span className="text-indigo-400 font-sans font-semibold bg-indigo-950/40 px-2 py-0.5 rounded border border-indigo-800/40">
+              👈 Click the floating orb to expand
+            </span>
+          )}
         </div>
 
-        {/* Desktop Widget Preview Container */}
-        <div 
-          className="transition-all duration-300 relative z-10 shadow-2xl"
-          style={{
-            width: isExpanded ? '740px' : '440px',
-            height: isExpanded ? '560px' : '280px',
-            maxWidth: '95vw',
-            maxHeight: '85vh',
-          }}
-        >
-          {renderAppContent()}
+        {/* THE FLOATING ORB OR ANCHORED PANEL */}
+        <div className="relative z-20 my-auto">
+          {viewMode === 'icon' ? (
+            <div className="w-[72px] h-[72px] transition-transform duration-200 hover:scale-105">
+              <FloatingOrb
+                pendingRequests={allPending}
+                onExpand={() => switchMode('panel')}
+              />
+            </div>
+          ) : (
+            <div 
+              className="transition-all duration-300 relative z-10 shadow-2xl"
+              style={{
+                width: viewMode === 'inbox' ? '740px' : '420px',
+                height: viewMode === 'inbox' ? '560px' : '290px',
+                maxWidth: '95vw',
+                maxHeight: '85vh',
+              }}
+            >
+              {renderCardOrInboxContent()}
+            </div>
+          )}
         </div>
 
-        {/* Quick Helper Tips */}
-        <div className="absolute bottom-4 text-[11px] text-slate-500 flex items-center gap-4">
-          <span>• Click <kbd className="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700">Allow</kbd> to simulate agent approval</span>
-          <span>• Click <kbd className="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700">✕</kbd> to hide without dismissing from inbox</span>
-          <span>• Press <kbd className="bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded border border-slate-700">Esc</kbd> to minimize</span>
+        {/* Instructions Footer */}
+        <div className="text-[11px] text-slate-500 flex items-center justify-between z-10 pt-4 border-t border-slate-900">
+          <div className="flex items-center gap-4">
+            <span>• Primary Footprint: <strong>72×72px Floating Orb</strong></span>
+            <span>• Expands contextually only when attention required or clicked</span>
+            <span>• ✕ Collapses panel without dismissing request from inbox</span>
+          </div>
+          <span className="font-mono text-slate-400">Press Esc to collapse</span>
         </div>
       </main>
     </div>
