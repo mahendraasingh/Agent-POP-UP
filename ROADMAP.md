@@ -37,29 +37,29 @@ This document outlines the phased development plan for **Agent Pop-Up**. Every l
 ---
 
 ## Phase 4: Request Lifecycle, Queue & State Engine
-- [ ] Define standardized agent event schemas and validation.
-- [ ] Implement local Request Queue Manager with deduplication and TTL expiration.
-- [ ] Implement state transitions (`pending` -> `approved` / `rejected` / `submitted` / `dismissed` / `expired`).
-- [ ] Implement local JSON storage for settings, window coordinates, and sanitized history.
-- [ ] Add comprehensive Vitest unit tests covering queue logic and state transitions.
-- [ ] Push Phase 4 checkpoint to GitHub and verify.
+- [x] Define standardized agent event schemas and validation.
+- [x] Implement local Request Queue Manager with deduplication and TTL expiration.
+- [x] Implement state transitions (`pending` -> `approved` / `rejected` / `submitted` / `dismissed` / `expired`).
+- [x] Implement local JSON storage for settings, window coordinates, and sanitized history.
+- [x] Add comprehensive Vitest unit tests covering queue logic and state transitions.
+- [x] Push Phase 4 checkpoint to GitHub and verify.
 
 ---
 
 ## Phase 5: Agent Ingestion & Claude Code Integration
-- [ ] Build local loopback ingestion server (`127.0.0.1`) with HMAC/token security for agent events.
-- [ ] Implement Claude Code integration hook adapter (permission hooks, notification hooks).
-- [ ] Support synchronous decision response and asynchronous status updates.
-- [ ] Create mock agent harness for automated integration testing.
-- [ ] Push Phase 5 checkpoint to GitHub and verify.
+- [x] Build local loopback ingestion server (`127.0.0.1`) with HMAC/token security for agent events.
+- [x] Implement Claude Code integration hook adapter (permission hooks, notification hooks).
+- [x] Support synchronous decision response and asynchronous status updates.
+- [x] Create mock agent harness for automated integration testing.
+- [x] Push Phase 5 checkpoint to GitHub and verify.
 
 ---
 
 ## Phase 6: Antigravity IDE Integration & Generic Agent Protocol
-- [ ] Implement Antigravity integration adapter with window focus and workspace context awareness.
-- [ ] Implement Generic Agent Protocol (GAP) CLI utility for custom agents / shell scripts.
-- [ ] Document integration configuration and hook setup in `INTEGRATIONS.md`.
-- [ ] Push Phase 6 checkpoint to GitHub and verify.
+- [x] Implement Antigravity integration adapter with window focus and workspace context awareness.
+- [x] Implement Generic Agent Protocol (GAP) CLI utility for custom agents / shell scripts.
+- [x] Document integration configuration and hook setup in `INTEGRATIONS.md`.
+- [x] Push Phase 6 checkpoint to GitHub and verify.
 
 ---
 
