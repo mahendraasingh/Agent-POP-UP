@@ -86,3 +86,14 @@ This document outlines the phased development plan for **Agent Pop-Up**. Every l
 - [x] Secure `.gitignore` with `release/` and build outputs protection.
 - [x] Synchronize documentation with verified build and usage instructions.
 - [x] Final sync and repository verification.
+
+---
+
+## Phase 10: Visual Design & Localhost Experience Overhaul
+- [x] Integrate Tailwind CSS v4 compiler and design token architecture into Vite pipeline (`@tailwindcss/vite`).
+- [x] Resolve root cause of unstyled localhost rendering and raw browser element spilling.
+- [x] Overhaul `FloatingCard.tsx` with compact desktop framing, user question interactive input, risk warning badges, one-click copy, and tactile submitting states.
+- [x] Implement dual-mode Desktop Live Simulator in `App.tsx` with test scenario triggers (`+ Command`, `+ Question`, `+ Destructive`, `+ Complete`) for seamless localhost browser testing.
+- [x] Adjust compact window dimensions (`440x280`) in `WindowManager` for optimal vertical breathing room.
+- [x] Refine `UnifiedInbox.tsx` with glassmorphic cards, search filtering, and clear state transitions.
+- [x] Verify compilation (`npm run build`), test suite (28 passing tests), and localhost HMR.

@@ -2,8 +2,8 @@ import { BrowserWindow, screen, app } from 'electron';
 import path from 'path';
 import { AgentDockSettings } from '../shared/types';
 
-export const COMPACT_SIZE = { width: 440, height: 260 };
-export const EXPANDED_SIZE = { width: 720, height: 560 };
+export const COMPACT_SIZE = { width: 440, height: 280 };
+export const EXPANDED_SIZE = { width: 740, height: 560 };
 
 export class WindowManager {
   private window: BrowserWindow | null = null;

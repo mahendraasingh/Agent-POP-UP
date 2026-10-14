@@ -10,7 +10,9 @@ import {
   X, 
   Trash2,
   Clock,
-  Filter
+  Filter,
+  CheckCircle2,
+  FolderGit2
 } from 'lucide-react';
 
 interface UnifiedInboxProps {
@@ -49,25 +51,26 @@ export const UnifiedInbox: React.FC<UnifiedInboxProps> = ({
       const matchTitle = req.title.toLowerCase().includes(q);
       const matchDesc = req.description.toLowerCase().includes(q);
       const matchCmd = req.payload.command?.toLowerCase().includes(q);
-      if (!matchTitle && !matchDesc && !matchCmd) return false;
+      const matchQ = req.payload.question?.toLowerCase().includes(q);
+      if (!matchTitle && !matchDesc && !matchCmd && !matchQ) return false;
     }
 
     return true;
   });
 
   return (
-    <div className="flex flex-col h-full bg-slate-900/60 overflow-hidden text-slate-200">
+    <div className="flex flex-col h-full bg-slate-950/40 overflow-hidden text-slate-200 select-none">
       {/* Top Filter & Search Bar */}
-      <div className="p-3 border-b border-slate-800 space-y-2">
+      <div className="p-3 border-b border-white/[0.08] space-y-2.5 bg-slate-950/50">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
-            <Search size={14} className="absolute left-2.5 top-2.5 text-slate-400" />
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search commands, questions, workspaces..."
-              className="w-full bg-slate-950/80 border border-slate-700/80 rounded-md pl-8 pr-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+              className="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500/80 focus:ring-1 focus:ring-indigo-500/30 transition"
             />
           </div>
 
@@ -75,7 +78,7 @@ export const UnifiedInbox: React.FC<UnifiedInboxProps> = ({
             <select
               value={agentFilter}
               onChange={(e) => setAgentFilter(e.target.value)}
-              className="bg-slate-950/80 border border-slate-700/80 rounded-md px-2 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-500"
+              className="bg-slate-900/90 border border-slate-700/80 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-indigo-500/80 transition"
             >
               <option value="all">All Agents</option>
               {uniqueAgents.map(name => (
@@ -86,7 +89,7 @@ export const UnifiedInbox: React.FC<UnifiedInboxProps> = ({
 
           <button
             onClick={onClearHistory}
-            className="p-1.5 rounded-md text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800/80 transition"
             title="Clear Resolved History"
           >
             <Trash2 size={14} />
@@ -94,7 +97,7 @@ export const UnifiedInbox: React.FC<UnifiedInboxProps> = ({
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex items-center gap-1 text-xs">
+        <div className="flex items-center gap-1.5 text-xs">
           {(['all', 'pending', 'resolved', 'dismissed'] as const).map(tab => {
             const count = requests.filter(r => {
               if (tab === 'all') return true;
@@ -104,17 +107,24 @@ export const UnifiedInbox: React.FC<UnifiedInboxProps> = ({
               return true;
             }).length;
 
+            const isSelected = filterTab === tab;
+
             return (
               <button
                 key={tab}
                 onClick={() => setFilterTab(tab)}
-                className={`px-3 py-1 rounded-md capitalize font-medium transition ${
-                  filterTab === tab
-                    ? 'bg-indigo-600 text-white font-semibold'
+                className={`px-3 py-1 rounded-md capitalize font-medium transition text-[11px] flex items-center gap-1.5 ${
+                  isSelected
+                    ? 'bg-indigo-600 text-white font-semibold shadow-sm shadow-indigo-950/50'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
                 }`}
               >
-                {tab} ({count})
+                <span>{tab}</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                  isSelected ? 'bg-indigo-700/80 text-white' : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {count}
+                </span>
               </button>
             );
           })}
@@ -137,34 +147,41 @@ export const UnifiedInbox: React.FC<UnifiedInboxProps> = ({
               <div
                 key={req.id}
                 onClick={() => onOpenDetails(req)}
-                className={`p-3 rounded-lg border transition cursor-pointer ${
+                className={`p-3 rounded-xl border transition cursor-pointer select-none ${
                   isPending
                     ? isDestructive
-                      ? 'bg-rose-950/20 border-rose-500/40 hover:border-rose-400'
-                      : 'bg-slate-800/40 border-indigo-500/30 hover:border-indigo-400'
-                    : 'bg-slate-900/40 border-slate-800/80 opacity-75 hover:opacity-100 hover:border-slate-700'
+                      ? 'bg-rose-950/20 border-rose-500/40 hover:border-rose-400 shadow-sm shadow-rose-950/30'
+                      : 'bg-slate-900/60 border-indigo-500/30 hover:border-indigo-400/80 shadow-sm shadow-indigo-950/20'
+                    : 'bg-slate-900/30 border-white/[0.06] opacity-75 hover:opacity-100 hover:border-slate-700'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                       {req.agentName}
                     </span>
-                    <span className="text-xs font-semibold text-slate-200 truncate">
+                    <span className="text-xs font-semibold text-slate-100 truncate">
                       {req.title}
                     </span>
+                    {req.workspacePath && (
+                      <span className="text-[10px] text-slate-500 flex items-center gap-1 font-mono">
+                        <FolderGit2 size={10} />
+                        {req.workspacePath.split(/[\/\\]/).pop()}
+                      </span>
+                    )}
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full capitalize ${
                       req.status === 'pending' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse' :
                       req.status === 'approved' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
                       req.status === 'denied' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
-                      'bg-slate-700 text-slate-400'
+                      req.status === 'submitted' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' :
+                      'bg-slate-800 text-slate-400 border border-slate-700'
                     }`}>
                       {req.status}
                     </span>
-                    <span className="text-[10px] text-slate-500 flex items-center gap-1">
+                    <span className="text-[10px] text-slate-500 flex items-center gap-1 font-mono">
                       <Clock size={10} />
                       {new Date(req.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </span>
@@ -172,13 +189,18 @@ export const UnifiedInbox: React.FC<UnifiedInboxProps> = ({
                 </div>
 
                 {req.payload.command && (
-                  <div className="p-2 rounded bg-slate-950/80 border border-slate-800 text-xs code-block text-cyan-300 my-1 truncate">
-                    $ {req.payload.command}
+                  <div className="p-2 rounded-lg bg-slate-950/80 border border-slate-800 text-xs code-block text-cyan-300 my-1 truncate flex items-center justify-between gap-2">
+                    <span className="truncate">$ {req.payload.command}</span>
+                    {isDestructive && (
+                      <span className="px-1.5 py-0.2 rounded text-[9px] bg-rose-500/20 text-rose-300 border border-rose-500/30 font-sans font-bold shrink-0">
+                        DESTRUCTIVE
+                      </span>
+                    )}
                   </div>
                 )}
 
                 {req.payload.question && (
-                  <div className="text-xs text-amber-200/90 my-1 line-clamp-2">
+                  <div className="p-2 rounded-lg bg-amber-950/20 border border-amber-500/30 text-xs text-amber-200/90 my-1 line-clamp-2">
                     {req.payload.question}
                   </div>
                 )}
@@ -188,24 +210,33 @@ export const UnifiedInbox: React.FC<UnifiedInboxProps> = ({
                   <div className="flex items-center justify-end gap-2 mt-2 pt-2 border-t border-slate-800/60" onClick={e => e.stopPropagation()}>
                     <button
                       onClick={() => onDismiss(req.id)}
-                      className="px-2.5 py-1 text-xs rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
+                      className="px-2.5 py-1 text-xs rounded-md bg-slate-800/80 hover:bg-slate-700 text-slate-300 transition"
+                      title="Hide from popup without deciding"
                     >
-                      Dismiss
+                      Hide
                     </button>
-                    <button
-                      onClick={() => onRespond(req.id, 'deny')}
-                      className="px-3 py-1 text-xs rounded bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/50 flex items-center gap-1"
-                    >
-                      <X size={12} />
-                      Deny
-                    </button>
-                    <button
-                      onClick={() => onRespond(req.id, 'allow')}
-                      className="px-3 py-1 text-xs rounded bg-indigo-600 hover:bg-indigo-500 text-white font-medium flex items-center gap-1"
-                    >
-                      <Check size={12} />
-                      Allow
-                    </button>
+                    {req.supportedActions.includes('deny') && (
+                      <button
+                        onClick={() => onRespond(req.id, 'deny')}
+                        className="px-3 py-1 text-xs rounded-md bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 border border-rose-800/50 flex items-center gap-1 transition"
+                      >
+                        <X size={12} />
+                        Deny
+                      </button>
+                    )}
+                    {req.supportedActions.includes('allow') && (
+                      <button
+                        onClick={() => onRespond(req.id, 'allow')}
+                        className={`px-3 py-1 text-xs rounded-md text-white font-medium flex items-center gap-1 shadow transition ${
+                          isDestructive 
+                            ? 'bg-rose-600 hover:bg-rose-500 border border-rose-400' 
+                            : 'bg-indigo-600 hover:bg-indigo-500 border border-indigo-400'
+                        }`}
+                      >
+                        <Check size={12} />
+                        {isDestructive ? 'Approve Risk' : 'Allow'}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
