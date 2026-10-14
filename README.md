@@ -16,16 +16,21 @@ When working with AI coding agents (such as Claude Code, Antigravity, and autono
 - Notification of task completion or blocker errors.
 
 ## 🚀 The Solution
-**Agent Pop-Up** is an always-accessible, lightweight Windows desktop companion that floats unobtrusively on your screen (top-left by default), aggregates real-time requests from your agents, and lets you inspect and respond directly without leaving your current workspace.
+**Agent Pop-Up** is a small, beautiful, always-accessible **floating desktop icon (AI Companion Orb)** that sits directly on top of your normal desktop applications (top-left by default). You can continue coding in your IDE, terminal, or browser without switching windows.
+
+When an agent needs your attention, the orb pulses with a live counter badge. Clicking the orb expands a compact, contextual request card right where you are. When you're done, it collapses back to the tiny floating icon.
 
 ---
 
 ## ✨ Features
-- 🪟 **Floating Desktop Window**: Compact, draggable, frameless, and always-on-top with multi-monitor DPI support.
-- ⚡ **Instant 1-Click Actions**: Approve (`Allow`), Reject (`Deny`), or `Dismiss` requests in milliseconds.
-- 📬 **Unified Agent Inbox**: Comprehensive dashboard listing active, waiting, and completed requests across all agents.
-- 🛡️ **Destructive Command Detection**: Automatically highlights high-risk terminal commands (`rm -rf`, `DROP`, force push).
-- 🔌 **Multiple Integrations**: Native support for Claude Code hook integration, Antigravity companion mode, and Generic Agent Protocol (GAP) via local loopback.
+- 🔮 **Floating Desktop Icon (Primary Interface)**: Extremely small 72×72px desktop footprint. Stays visible and accessible above normal windows without stealing focus.
+- ⚡ **3-Tier Window Geometry**:
+  - **Tier 1 (Orb)**: Minimal floating AI companion emblem with orbital breathing animations.
+  - **Tier 2 (Panel)**: Compact 420×290px request card anchored to the icon for instant Allow / Deny / Question input.
+  - **Tier 3 (Inbox)**: Full 740×560px search-enabled unified history, opened only on demand.
+- 💬 **Interactive Question Responses**: Type and submit clarifications directly to agents without leaving your active window.
+- 🛡️ **Destructive Command Detection**: Automatically highlights high-risk commands (`rm -rf`, force reset) with glowing crimson warnings.
+- 🔌 **Multiple Agent Integrations**: Native support for Claude Code hook adapter, Antigravity assistant protocol, and Generic Agent Protocol (GAP) via local loopback (`127.0.0.1:49222`).
 - 🔒 **Zero Remote Telemetry**: Strict local-first architecture. No external cloud servers or accounts required.
 
 ---
